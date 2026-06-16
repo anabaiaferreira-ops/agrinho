@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFazenda: O Desafio do Agro Sustentável</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #1b5e20;
+        }
+
+        p.intro {
+            font-size: 14px;
+            color: #558b2f;
+            margin-bottom: 25px;
+        }
+
+        .status-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: #f1f8e9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .status-box {
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .bar-outer {
+            background-color: #c8e6c9;
+            border-radius: 10px;
+            height: 20px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .bar-inner {
+            height: 100%;
+            width: 50%;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+
+        #prod-bar { background-color: #2e7d32; }
+        #sust-bar { background-color: #00796b; }
+
+        .card {
+            background: #fafafa;
+            border: 2px solid #a5d6a7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-text {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #restart-btn {
+            background-color: #1565c0;
+        }
+        #restart-btn:hover {
+            background-color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>EcoFazenda</h1>
+        <p class="intro">Equilibre a produção e o meio ambiente para vencer!</p>
+
+        <div class="status-container">
+            <div class="status-box">
+                <span class="status-label">🚜 Produtividade: <span id="prod-val">50</span>%</span>
+                <div class="bar-outer">
+                    <div id="prod-bar" class="bar-inner"></div>
+                </div>
+            </div>
+            <div class="status-box">
+                <span class="status-label">🌱 Sustentabilidade: <span id="sust-val">50</span>%</span>
+                <div class="bar-outer">
+                    <div id="sust-bar" class="bar-inner"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-screen">
+            <div class="card">
+                <p id="question-text" class="card-text">Carregando desafio...</p>
+            </div>
+            <div class="btn-container">
+                <button id="option1-btn" onclick="chooseOption(1)">Opção 1</button>
+                <button id="option2-btn" onclick="chooseOption(2)">Opção 2</button>
+            </div>
+        </div>
+
+        <div id="game-over-screen" class="hidden">
+            <div class="card">
+                <p id="game-over-text" class="card-text"></p>
+            </div>
+            <button id="restart-btn" onclick="restartGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis do Estado do Jogo
+        let productivity = 50;
+        let sustainability = 50;
+        let currentRound = 0;
+
+        // Banco de dados de perguntas e consequências
+        const rodadas = [
+            {
+                texto: "Pragas estão ameaçando a sua plantação de milho. O que você faz?",
+                opcoes: [
+                    {
+                        texto: "Aplicar defensivos químicos pesados para eliminar tudo rapidamente.",
+                        prod: 25, sust: -20
+                    },
+                    {
+                        texto: "Adotar o manejo integrado de pragas (MIP) com controle biológico.",
+                        prod: 10, sust: 15
+                    }
+                ]
+            },
+            {
+                texto: "O período de seca começou. Como você vai irrigar sua lavoura?",
+                opcoes: [
+                    {
+                        texto: "Usar irrigação por inundação, que gasta mais água mas é mais barata.",
+                        prod: 15, sust: -25
+                    },
+                    {
+                        texto: "Instalar um sistema de gotejamento de alta eficiência e reaproveitar água.",
+                        prod: 20, sust: 20
+                    }
+                ]
+            },
+            {
+                texto: "Sua fazenda tem uma área de mata ciliar degradada perto do rio. O que fazer?",
+                opcoes: [
+                    {
+                        texto: "Ignorar e expandir a área de plantio naquele pedaço.",
+                        prod: 15, sust: -30
+                    },
+                    {
+                        texto: "Isolar a área e plantar árvores nativas para recuperar a margem.",
+                        prod: -5, sust: 30
+                    }
+                ]
+            },
+            {
+                texto: "É hora de preparar o solo para a próxima safra. Qual técnica usar?",
+                opcoes: [
+                    {
+                        texto: "Arar a terra de forma convencional revirando o solo.",
+                        prod: 15, sust: -10
+                    },
+                    {
+                        texto: "Praticar o Plantio Direto (palhada protegendo o solo).",
+                        prod: 15, sust: 15
+                    }
+                ]
+            },
+            {
+                texto: "A energia da fazenda está cara. Qual investimento realizar?",
+                opcoes: [
+                    {
+                        texto: "Manter os geradores a diesel atuais para evitar gastos imediatos.",
+                        prod: 5, sust: -15
+                    },
+                    {
+                        texto: "Instalar painéis de energia solar para abastecer as bombas e galpões.",
+                        prod: 10, sust: 25
+                    }
+                ]
+            }
+        ];
+
+        // Atualiza as barras visuais na tela
+        function updateBars() {
+            // Limita os valores entre 0 e 100
+            productivity = Math.max(0, Math.min(100, productivity));
+            sustainability = Math.max(0, Math.min(100, sustainability));
+
+            document.getElementById('prod-val').innerText = productivity;
+            document.getElementById('sust-val').innerText = sustainability;
+
+            document.getElementById('prod-bar').style.width = productivity + '%';
+            document.getElementById('sust-bar').style.width = sustainability + '%';
+        }
+
+        // Carrega a rodada atual
+        function loadRound() {
+            if (productivity <= 0) {
+                endGame("Falência! Sua produtividade zerou e a fazenda não conseguiu se sustentar financeiramente.");
+                return;
+            }
+            if (sustainability <= 0) {
+                endGame("Desastre Ambiental! O esgotamento dos recursos naturais tornou sua terra infértil e sem água.");
+                return;
+            }
+            if (currentRound >= rodadas.length) {
+                endGame(`Parabéns! Você concluiu a temporada. Suas estatísticas finais foram:\n🚜 Produtividade: ${productivity}%\n🌱 Sustentabilidade: ${sustainability}%\nVocê provou que o Agro pode ser Forte e Sustentável!`);
+                return;
+            }
+
+            const dadosRodada = rodadas[currentRound];
+            document.getElementById('question-text').innerText = dadosRodada.texto;
+            document.getElementById('option1-btn').innerText = dadosRodada.opcoes[0].texto;
+            document.getElementById('option2-btn').innerText = dadosRodada.opcoes[1].texto;
+        }
+
+        // Executa a escolha do jogador
+        function chooseOption(num) {
+            const opcaoSelecionada = rodadas[currentRound].opcoes[num - 1];
+            
+            // Aplica os efeitos
+            productivity += opcaoSelecionada.prod;
+            sustainability += opcaoSelecionada.sust;
+
+            updateBars();
+            currentRound++;
+            
+            // Pequeno delay para o jogador ver a barra se mover antes da próxima pergunta
+            setTimeout(loadRound, 400);
+        }
+
+        // Termina o jogo
+        function endGame(text) {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('game-over-text').innerText = text;
+        }
+
+        // Reinicia o jogo
+        function restartGame() {
+            productivity = 50;
+            sustainability = 50;
+            currentRound = 0;
+            updateBars();
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            loadRound();
+        }
+
+        // Inicialização automática do jogo
+        updateBars();
+        loadRound();
+    </script>
+</body>
+</html>
